@@ -46,5 +46,5 @@ Devoirs-NLP-Mohamed-Bouazza/
 ---
 
 **Étudiant :** Mohamed Bouazza  
-**Email :** meedbouazza09@gmail.com  
-**Profil Kaggle :** [bouazzamohamed](https://www.kaggle.com/bouazzamohamed)
+**Email :** mohamed.bouazza4@etu.uae.ac.ma  
+**Profil Kaggle :** [mohamed-bouazza](https://www.kaggle.com/bouazzamohamed)
