@@ -13,17 +13,6 @@
 | [Week 3](./Week3-RAG-Architectures/) | Devoir 2 — Architectures RAG | [![Kaggle](https://img.shields.io/badge/Kaggle-Week3-blue?logo=kaggle)](https://www.kaggle.com/code/bouazzamohamed/week3-devoirnlp) | ✅ Remis |
 | [Week 4](./Week4-LLM-Benchmarking-SNORT/) | Devoir 3 — Comparaison LLMs & Métriques | [![Kaggle](https://img.shields.io/badge/Kaggle-Week4-blue?logo=kaggle)](https://www.kaggle.com/code/bouazzamohamed/week-4-devoirnlp) | ✅ Remis |
 
----
-
-## Projet de Fin de Module
-
-**Sujet 2 : Génération automatique de règles SNORT via NLP + RAG**
-
-Développement d'un système intelligent capable de générer des règles Snort (IDS) à partir de descriptions en langage naturel de comportements réseau suspects.
-
-**Stack technique :** Python · FAISS · BM25 · Qwen2.5-7B · Sentence-Transformers · Streamlit · FastAPI
-
----
 
 ## Structure du repository
 
@@ -39,4 +28,4 @@ Devoirs-NLP-Mohamed-Bouazza/
 
 **Étudiant :** Mohamed Bouazza  
 **Email :** meedbouazza09@gmail.com  
-**Profil Kaggle :** [bouazzamohamed](https://www.kaggle.com/bouazzamohamed)
+**Profil Kaggle :** [Mohamd Bouazza](https://www.kaggle.com/bouazzamohamed)
