@@ -1,4 +1,4 @@
-# Week 4 — Devoir 3 : Comparaison des LLMs & Métriques d'Évaluation SNORT
+# Week 4 — Devoir 3 : 7 Architectures RAG pour la Génération de Règles SNORT
 
 [![Kaggle](https://img.shields.io/badge/Kaggle-Notebook-blue?logo=kaggle)](https://www.kaggle.com/code/bouazzamohamed/week-4-devoirnlp)
 [![Python](https://img.shields.io/badge/Python-3.10-green?logo=python)](https://python.org)
@@ -8,52 +8,78 @@
 
 ## Objectif
 
-Benchmarker plusieurs LLMs sur la génération de règles SNORT et implémenter des métriques d'évaluation avancées pour mesurer objectivement la qualité des sorties.
+Implémenter, comparer et évaluer **7 architectures RAG** appliquées à la génération de règles SNORT (IDS) à partir de descriptions en langage naturel de comportements réseau suspects.
 
 ---
 
-## LLMs comparés
+## Dataset
 
-| Modèle | Paramètres | Quantization | VRAM |
-|--------|-----------|--------------|------|
-| `Qwen2.5-7B-Instruct` | 7B | 4-bit NF4 | ~5 GB |
-| `Mistral-7B-Instruct` | 7B | 4-bit NF4 | ~5 GB |
-| `LLaMA-3.1-8B-Instruct` | 8B | 4-bit NF4 | ~6 GB |
+- **Source :** Emerging Threats Open Rules (ETOpen)
+- **Taille :** 500 règles SNORT (sampling stratifié)
+- **Catégories :** 24 classtypes (web-application-attack, trojan-activity, attempted-recon…)
 
 ---
 
-## Métriques implémentées
+## Modèles utilisés
 
-### Qualité SNORT (spécifiques au projet)
+| Rôle | Modèle | Paramètres |
+|------|--------|------------|
+| LLM | `Qwen2.5-7B-Instruct` | 7B (4-bit NF4 quantization) |
+| Embedder | `BAAI/bge-small-en-v1.5` | 384 dimensions |
+| Reranker | `cross-encoder/ms-marco-MiniLM-L-6-v2` | Cross-encoder |
+| Sparse | `BM25Okapi` | Tokenizer cybersécurité |
+
+---
+
+## Les 7 Architectures comparées
+
+| # | Architecture | Principe |
+|---|-------------|----------|
+| 1 | **Baseline** | LLM seul, sans contexte RAG |
+| 2 | **Classic RAG** | Dense retrieval FAISS → LLM |
+| 3 | **Re-ranking RAG** | Dense → Cross-encoder reranker → LLM |
+| 4 | **Hybrid RAG** | Dense + BM25 fusionnés (RRF) → LLM |
+| 5 | **Multi-hop RAG** | Recherche itérative multi-étapes |
+| 6 | **Graph RAG** | Graphe de connaissances NetworkX |
+| 7 | **Agentic RAG** | Pattern ReAct : décision autonome de retrieval |
+
+---
+
+## Résultats — Quality Score par architecture
+
+| Architecture | Latence | Quality/10 | Syntax% | Hallucinations |
+|-------------|---------|-----------|---------|----------------|
+| **rag_classic** | 20.2s | **8.17** ← meilleur | 83% | 0 |
+| rag_hybrid | 23.3s | 8.00 | 83% | 0 |
+| graph_rag | 17.3s | 7.67 | 83% | 0 |
+| multi_hop | 25.3s | 7.17 | 66% | 0 |
+| rag_rerank | 24.0s | 7.17 | 66% | 0 |
+| agentic_rag | 25.4s | 6.50 | 83% | 1 |
+| **baseline** | 6.6s | 5.33 ← référence | 100%* | 0 |
+
+> *La syntaxe baseline à 100% est trompeuse : les règles générées sont trop génériques (`any any -> any any`). Le **Quality Score** révèle la vraie valeur ajoutée du RAG.
+
+---
+
+## Métriques d'évaluation SNORT
 
 | Métrique | Description | Plage |
 |----------|-------------|-------|
-| **Quality Score** | 10 critères de richesse (flow, content, pcre, classtype...) | 0 – 10 |
+| **Quality Score** | Richesse de détection (flow, content, pcre, classtype…) | 0 – 10 |
 | **Syntax Valid %** | Structure minimale correcte | 0 – 100% |
 | **Truncation Rate** | Règles coupées avant `;)` | 0 – 100% |
 | **Hallucination Rate** | SIDs invalides ou CVEs malformés | 0 – 100% |
 
-### Génération standard
+## Métriques de retrieval (Dense FAISS, k=3)
 
-| Métrique | Description |
-|----------|-------------|
-| **BLEU Score** | Similarité n-grammes avec règles de référence |
-| **ROUGE-L** | Rappel de la sous-séquence commune |
-| **Latency (s)** | Temps de génération par règle |
-| **Token/s** | Débit de génération |
-
-### Retrieval
-
-| Métrique | Description |
-|----------|-------------|
-| **Precision@k** | Fraction de docs pertinents parmi les k récupérés |
-| **Recall@k** | Fraction de docs pertinents récupérés |
-| **MRR** | Mean Reciprocal Rank |
-| **NDCG@k** | Normalized Discounted Cumulative Gain |
+| Méthode | P@3 | R@3 | MRR |
+|---------|-----|-----|-----|
+| Dense (FAISS) | 0.533 | 0.500 | 0.533 |
+| Hybrid (RRF) | 0.400 | 0.300 | 0.500 |
 
 ---
 
-## Queries de test
+## Queries de test (6 queries diversifiées)
 
 ```
 1. Detect TCP port scanning on web server
@@ -66,46 +92,27 @@ Benchmarker plusieurs LLMs sur la génération de règles SNORT et implémenter 
 
 ---
 
-## Résultats clés
+## Livrables
 
-```
-Architecture    Quality/10   Latence   Truncated   Halluc.
-rag_classic       8.17       20.2s      0/6          0     ← MEILLEUR
-rag_hybrid        8.00       23.3s      1/6          0
-graph_rag         7.67       17.3s      1/6          0
-multi_hop         7.17       25.3s      3/6          0
-rag_rerank        7.17       24.0s      2/6          0
-agentic_rag       6.50       25.4s      1/6          1
-baseline          5.33        6.6s      1/6          0     ← RÉFÉRENCE
-```
-
-### Exemple de règle générée (Quality: 9/10)
-
-```snort
-alert tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS
-(msg:"ET SCAN TCP Port Scanning on Web Server";
- flow:to_server,established;
- content:"GET"; http_method;
- content:"HTTP/1.1 404 Not Found"; http_status;
- content:"User-Agent"; http_header;
- classtype:portscan; sid:2008500; rev:1;
- metadata:created_at 2010_07_30, confidence High;)
-```
+- `snort_dataset.json` — Dataset de 500 règles SNORT structurées
+- `rag_results.json` — Résultats complets des 7 architectures sur 6 queries
+- `metrics.csv` — Tableau de benchmarking comparatif
+- `tsne_snort.png` — Visualisation t-SNE des embeddings SNORT
+- Interface Gradio interactive (Quality: 9/10)
 
 ---
 
-## Livrables
+## Conclusion
 
-- `snort_dataset.json` — 500 règles SNORT structurées
-- `rag_results.json` — résultats complets des 7 architectures
-- `metrics.csv` — tableau de benchmarking
-- `tsne_snort.png` — visualisation t-SNE
-- Interface **Gradio** déployée (Quality: 9/10 | Complete)
+> Le RAG améliore significativement la qualité des règles SNORT générées.  
+> L'architecture **Classic RAG** obtient le meilleur score (8.17/10).  
+> L'architecture **Hybrid RAG** (dense + BM25) est la plus robuste pour la cybersécurité car elle capture les identifiants exacts (CVE, ports, protocoles) grâce à la recherche sparse BM25.
 
 ---
 
 ## Lien Kaggle
 
+Notebook complet et exécutable :  
 **[https://www.kaggle.com/code/bouazzamohamed/week-4-devoirnlp](https://www.kaggle.com/code/bouazzamohamed/week-4-devoirnlp)**
 
 ---

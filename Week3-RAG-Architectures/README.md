@@ -1,4 +1,4 @@
-# Week 3 — Devoir 2 : Comparaison des 7 Architectures RAG
+# Week 3 — Système RAG sur le Code de la Route Marocain (Arabe)
 
 [![Kaggle](https://img.shields.io/badge/Kaggle-Notebook-blue?logo=kaggle)](https://www.kaggle.com/code/bouazzamohamed/week3-devoirnlp)
 [![Python](https://img.shields.io/badge/Python-3.10-green?logo=python)](https://python.org)
@@ -8,82 +8,119 @@
 
 ## Objectif
 
-Implémenter et comparer **7 architectures RAG** appliquées à la génération de règles SNORT depuis des descriptions en langage naturel.
+Implémenter un système **RAG (Retrieval-Augmented Generation)** sur le dataset structuré du Code de la Route Marocain (`export_final.csv`) pour répondre à des questions juridiques en arabe.
 
 ---
 
-## Dataset SNORT
+## Source de données
 
-- **Source :** Emerging Threats Open Rules (ETOpen)
-- **Taille :** 500 règles (sampling stratifié, 24 classtypes)
-- **Top classtypes :** web-application-attack, trojan-activity, attempted-recon...
-
----
-
-## Les 7 Architectures
-
-| # | Architecture | Principe |
-|---|-------------|----------|
-| 1 | **Baseline** | LLM seul, sans contexte |
-| 2 | **Classic RAG** | Dense retrieval FAISS → LLM |
-| 3 | **Re-ranking RAG** | Dense → Cross-encoder → LLM |
-| 4 | **Hybrid RAG** | Dense + BM25 fusionnés (RRF) → LLM |
-| 5 | **Multi-hop RAG** | Recherche itérative multi-étapes |
-| 6 | **Graph RAG** | Graphe de connaissances NetworkX |
-| 7 | **Agentic RAG** | Pattern ReAct : décision autonome |
+| Fichier | Description |
+|---------|-------------|
+| `export_final.csv` | Dataset issu du Week 2 — 318 articles × 18 colonnes |
 
 ---
 
-## Modèles utilisés
+## Architecture RAG
 
-| Rôle | Modèle |
-|------|--------|
-| LLM | `Qwen2.5-7B-Instruct` (4-bit) |
-| Embedder | `BAAI/bge-small-en-v1.5` |
-| Reranker | `cross-encoder/ms-marco-MiniLM-L-6-v2` |
-| Sparse | `BM25Okapi` |
-
----
-
-## Résultats
-
-| Architecture | Latence | Quality/10 | Syntax% | Halluc. |
-|-------------|---------|-----------|---------|---------|
-| **rag_classic** | 20.2s | **8.17** | 83% | 0 |
-| **rag_hybrid** | 23.3s | 8.00 | 83% | 0 |
-| graph_rag | 17.3s | 7.67 | 83% | 0 |
-| multi_hop | 25.3s | 7.17 | 66% | 0 |
-| rag_rerank | 24.0s | 7.17 | 66% | 0 |
-| agentic_rag | 25.4s | 6.50 | 83% | 1 |
-| baseline | 6.6s | 5.33 | 100% | 0 |
-
-> **Conclusion :** `rag_classic` obtient le meilleur Quality Score (8.17/10). `rag_hybrid` est le plus robuste pour la cybersécurité (CVEs, ports exacts capturés par BM25).
-
----
-
-## Retrieval Benchmarking (k=3)
-
-| Méthode | P@3 | R@3 | MRR |
-|---------|-----|-----|-----|
-| Dense (FAISS) | 0.533 | 0.500 | 0.533 |
-| Hybrid (RRF) | 0.400 | 0.300 | 0.500 |
+```
+[Question en arabe]
+        │
+        ▼
+[Embedding multilingue]
+  intfloat/multilingual-e5-base (768 dims)
+        │
+        ▼
+[Index FAISS — IndexFlatL2]
+  463 chunks indexés
+        │
+        ▼
+[Détection hors-domaine]
+  Seuil de distance cosinus
+        │
+        ▼
+[Top-k chunks récupérés]
+        │
+        ▼
+[Génération LLM]
+  Qwen/Qwen2.5-3B-Instruct
+        │
+        ▼
+[Réponse juridique en arabe]
+```
 
 ---
 
-## Livrables
+## Composants techniques
 
-- `snort_dataset.json` — 500 règles parsées
-- `rag_results.json` — outputs des 7 architectures
-- `metrics.csv` — tableau comparatif
-- `tsne_snort.png` — visualisation t-SNE
-- Interface **Gradio** interactive
+| Composant | Détail |
+|-----------|--------|
+| **Modèle d'embedding** | `intfloat/multilingual-e5-base` — 768 dimensions |
+| **Index vectoriel** | FAISS `IndexFlatL2` |
+| **Chunks indexés** | 463 chunks (issus des 318 articles) |
+| **LLM** | `Qwen/Qwen2.5-3B-Instruct` (3B paramètres) |
+| **Détection OOD** | Seuil distance cosinus sur score de similarité |
+
+---
+
+## Évaluation du retrieval
+
+### Métriques de précision (k=3 et k=5)
+
+| k | Precision@k | Recall@k | F1@k |
+|---|------------|---------|------|
+| 3 | 0.095 | — | — |
+| **5** | **0.143** | **0.238** | **0.179** |
+
+### Détection hors-domaine (Out-of-Domain)
+
+| Test | Résultat |
+|------|---------|
+| Questions Code de la Route | Répondu correctement |
+| Questions hors-domaine (6 tests) | **6/6 détectées = 100%** |
+
+> Le système refuse correctement de répondre à des questions sans rapport avec le Code de la Route.
+
+---
+
+## Interface utilisateur
+
+**Interface Gradio** en arabe :
+- Champ de question en langue arabe
+- Affichage des chunks récupérés
+- Réponse générée par le LLM
+- Indicateur de confiance (in-domain / out-of-domain)
+
+---
+
+## Exemple d'utilisation
+
+```
+Question : "ما هي العقوبة في حالة تجاوز السرعة المقررة ؟"
+
+→ Retrieval : 5 articles pertinents récupérés (Art. 68, 69, 70, 71, 304)
+→ Réponse   : "يعاقب على تجاوز الحد الأقصى للسرعة بغرامة تتراوح..."
+```
+
+---
+
+## Technologies utilisées
+
+| Librairie | Usage |
+|-----------|-------|
+| `sentence-transformers` | `multilingual-e5-base` embeddings |
+| `faiss-cpu` | Index vectoriel FAISS |
+| `transformers` | Qwen2.5-3B-Instruct LLM |
+| `pandas` | Chargement export_final.csv |
+| `gradio` | Interface utilisateur arabe |
+| `torch` | Backend GPU Tesla T4 |
 
 ---
 
 ## Lien Kaggle
 
+Notebook complet et exécutable :  
 **[https://www.kaggle.com/code/bouazzamohamed/week3-devoirnlp](https://www.kaggle.com/code/bouazzamohamed/week3-devoirnlp)**
 
 ---
 
-*Semaine 3 | Devoir 2 | Module NLP | M1 MIASD | Enseignante : Ikram Benabdelouahab*
+*Semaine 3 | Module NLP | M1 MIASD | Enseignante : Ikram Benabdelouahab*

@@ -1,39 +1,93 @@
-# Week 1 — Pipeline NLP : Prétraitement & Analyse de Texte
+# Week 1 — Pipeline NLP : Prétraitement & Analyse de Texte (Français)
 
 [![Kaggle](https://img.shields.io/badge/Kaggle-Notebook-blue?logo=kaggle)](https://www.kaggle.com/code/bouazzamohamed/week-1-devoirnlp)
 [![Python](https://img.shields.io/badge/Python-3.10-green?logo=python)](https://python.org)
+[![spaCy](https://img.shields.io/badge/spaCy-fr__core__news__sm-purple)](https://spacy.io)
 
 ---
 
 ## Objectif
 
-Construire un pipeline NLP complet pour le prétraitement, l'analyse et la représentation de textes en langage naturel.
+Construire un pipeline NLP complet en Python avec **spaCy** (`fr_core_news_sm`) sur des textes français, puis appliquer ce pipeline sur des textes arabes et un document PDF.
 
 ---
 
-## Contenu du notebook
+## Architecture du pipeline
 
-### 1. Prétraitement du texte
-- Tokenisation (mot, phrase, sous-mot)
-- Suppression des stop words
-- Stemming (PorterStemmer) et Lemmatisation (WordNet)
-- Normalisation : minuscules, ponctuation, caractères spéciaux
+```
+[Texte brut]
+     │
+     ▼
+[Collecte / Lecture PDF]
+     │
+     ▼
+[Prétraitement]
+  ├── Mise en minuscules
+  ├── Suppression ponctuation & chiffres
+  └── Suppression stop words (spaCy fr)
+     │
+     ▼
+[Analyse linguistique]
+  ├── Tokenisation
+  ├── POS Tagging (Part-of-Speech)
+  └── NER (Named Entity Recognition)
+     │
+     ▼
+[Vectorisation TF-IDF]
+     │
+     ▼
+[Résultats & Visualisation]
+```
 
-### 2. Représentations vectorielles
-- **Bag of Words (BoW)** — matrice terme-document
-- **TF-IDF** — pondération par fréquence inverse
-- **Word2Vec** — embeddings denses (Skip-gram / CBOW)
-- **Sentence-BERT** — embeddings contextuels
+---
 
-### 3. Analyse linguistique
-- POS Tagging (étiquetage morpho-syntaxique)
-- Named Entity Recognition (NER)
-- Analyse de sentiment
+## Exemples traités
 
-### 4. Visualisations
-- Nuage de mots (WordCloud)
-- Distribution des fréquences
-- Projection 2D des embeddings (PCA / t-SNE)
+### Exemple 1 — Pipeline complet sur texte d'actualité
+
+**Phrase testée :**
+```
+"Apple fondée par Steve Jobs en Californie"
+```
+
+**Résultat NER (spaCy fr_core_news_sm) :**
+| Entité | Type |
+|--------|------|
+| Apple | ORG |
+| Steve Jobs | PER |
+| Californie | LOC |
+
+---
+
+### Exemple 2 — TF-IDF sur phrase académique FST Tanger
+
+**Fonction utilisée :**
+```python
+trace_nlp_pipeline("Les ingénieurs étudient les algorithmes d'IA à la FST de Tanger!")
+```
+
+**Scores TF-IDF obtenus :**
+| Token lemmatisé | Score TF-IDF |
+|----------------|-------------|
+| étudier | 0.48 |
+| ingénieur | 0.48 |
+| algorithme | 0.37 |
+| ia | 0.37 |
+| tanger | 0.37 |
+
+---
+
+### Exemple 3 — Stemming vs Lemmatisation
+
+Comparaison entre **SnowballStemmer** (règles morphologiques) et **Lemmatisation spaCy** (formes canoniques) sur des verbes et noms français.
+
+---
+
+## Devoir — Extension sur textes arabes + PDF
+
+Le devoir applique le même pipeline à :
+- **Textes en arabe** (au lieu du français)
+- **Extraction depuis un PDF** via `PyPDF2`
 
 ---
 
@@ -41,12 +95,11 @@ Construire un pipeline NLP complet pour le prétraitement, l'analyse et la repr�
 
 | Librairie | Usage |
 |-----------|-------|
-| `nltk` | Tokenisation, stop words, stemming |
-| `spacy` | Lemmatisation, POS, NER |
-| `scikit-learn` | TF-IDF, BoW |
-| `gensim` | Word2Vec |
-| `sentence-transformers` | Sentence-BERT |
-| `matplotlib` / `seaborn` | Visualisations |
+| `spacy` + `fr_core_news_sm` | Tokenisation, POS, NER, Lemmatisation |
+| `nltk` | Stop words, SnowballStemmer |
+| `scikit-learn` | TF-IDF Vectorizer |
+| `PyPDF2` | Extraction de texte depuis PDF |
+| `matplotlib` | Visualisations |
 
 ---
 
